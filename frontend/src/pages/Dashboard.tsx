@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import DirectSlackMessaging from '../components/DirectSlackMessaging';
 import ScheduledSlackMessaging from '../components/ScheduledSlackMessaging';
-import { Navigate } from 'react-router';
 
 interface WorkspaceInfo {
   workspaceId: string;
@@ -16,35 +16,73 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('direct');
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // First, check localStorage for existing user data
+    const userData = localStorage.getItem('user');
+    
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.isAuthenticated && user.workspaceId && user.workspaceName) {
+          // Load data from localStorage
+          setWorkspaceInfo({
+            workspaceId: user.workspaceId,
+            workspaceName: user.workspaceName,
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+        localStorage.removeItem('user');
+      }
+    }
+
+    // If no localStorage data, check URL parameters for OAuth success
     const urlParams = new URLSearchParams(window.location.search);
     const oauthStatus = urlParams.get('oauth');
     const workspaceId = urlParams.get('workspaceId');
     const workspaceName = urlParams.get('workspaceName');
     const errorMessage = urlParams.get('message');
+
     console.log("workspaceId", workspaceId);
     console.log("workspaceName", workspaceName);
     console.log("oauthStatus", oauthStatus);
     console.log("errorMessage", errorMessage);
-    localStorage.setItem('user', JSON.stringify({
-      isAuthenticated: true,
-      workspaceId: workspaceId,
-      workspaceName: workspaceName,
-    }));
+
     if (oauthStatus === 'success' && workspaceId && workspaceName) {
+      // ✅ FIXED: Only save to localStorage when data is valid
+      const decodedWorkspaceName = decodeURIComponent(workspaceName);
+      localStorage.setItem('user', JSON.stringify({
+        isAuthenticated: true,
+        workspaceId,
+        workspaceName: decodedWorkspaceName,
+      }));
+
       setWorkspaceInfo({
         workspaceId,
-        workspaceName: decodeURIComponent(workspaceName)
+        workspaceName: decodedWorkspaceName,
       });
+
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (oauthStatus === 'error') {
       setError(errorMessage ? decodeURIComponent(errorMessage) : 'OAuth authentication failed');
+    } else {
+      // No authentication data found, redirect to home
+      navigate('/');
+      return;
     }
-    
+
     setIsLoading(false);
-  }, []);
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   if (isLoading) {
     return (
@@ -61,8 +99,21 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-base sm:text-lg opacity-90">Manage your Slack workspace integration</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Dashboard</h1>
+              <p className="text-base sm:text-lg opacity-90">Manage your Slack workspace integration</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { API_ENDPOINTS } from '../config';
 
 interface SlackOAuthProps {
@@ -9,6 +10,7 @@ interface SlackOAuthProps {
 const SlackOAuth = ({ oauthError, onErrorDismiss }: SlackOAuthProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Set error from props if provided
   useEffect(() => {
@@ -33,8 +35,16 @@ const SlackOAuth = ({ oauthError, onErrorDismiss }: SlackOAuthProps) => {
   const simulateOAuthSuccess = () => {
     setIsLoading(true);
     setTimeout(() => {
-      // Redirect to dashboard with test data
-      window.location.href = '/dashboard?oauth=success&workspaceId=T1234567890&workspaceName=Test%20Workspace';
+      // Save test data to localStorage
+      const testData = {
+        isAuthenticated: true,
+        workspaceId: 'T1234567890',
+        workspaceName: 'Test Workspace',
+      };
+      localStorage.setItem('user', JSON.stringify(testData));
+      
+      // Redirect to dashboard
+      navigate('/dashboard');
     }, 2000);
   };
 

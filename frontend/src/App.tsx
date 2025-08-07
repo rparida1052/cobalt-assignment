@@ -1,11 +1,31 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router'
 import SlackOAuth from './components/SlackOAuth'
 
 function App() {
   const [activeTab, setActiveTab] = useState('slack')
   const [oauthError, setOauthError] = useState<string | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
+    // Check localStorage for existing user data
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        const user = JSON.parse(userData)
+        if (user.isAuthenticated && user.workspaceId && user.workspaceName) {
+          // User is already authenticated, redirect to dashboard
+          navigate('/dashboard')
+          return
+        }
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error)
+        // Clear invalid data
+        localStorage.removeItem('user')
+      }
+    }
+
     // Check if we're returning from OAuth with an error
     const urlParams = new URLSearchParams(window.location.search);
     const oauthStatus = urlParams.get('oauth');
@@ -16,7 +36,21 @@ function App() {
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
+
+    setIsCheckingAuth(false)
+  }, [navigate]);
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-lg shadow-lg">
+          <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+          <span className="font-medium text-gray-700">Checking authentication...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     
