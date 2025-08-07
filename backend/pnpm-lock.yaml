@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@prisma/client':
+        specifier: 6.13.0
+        version: 6.13.0(prisma@6.13.0)
       axios:
         specifier: ^1.11.0
         version: 1.11.0
@@ -23,6 +26,9 @@ importers:
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
+      prisma:
+        specifier: ^6.13.0
+        version: 6.13.0
     devDependencies:
       '@types/cors':
         specifier: ^2.8.19
@@ -30,9 +36,6 @@ importers:
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
-      prisma:
-        specifier: ^6.13.0
-        version: 6.13.0
 
 packages:
 
@@ -43,6 +46,18 @@ packages:
   '@babel/helper-validator-identifier@7.27.1':
     resolution: {integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==}
     engines: {node: '>=6.9.0'}
+
+  '@prisma/client@6.13.0':
+    resolution: {integrity: sha512-8m2+I3dQovkV8CkDMluiwEV1TxV9EXdT6xaCz39O6jYw7mkf5gwfmi+cL4LJsEPwz5tG7sreBwkRpEMJedGYUQ==}
+    engines: {node: '>=18.18'}
+    peerDependencies:
+      prisma: '*'
+      typescript: '>=5.1.0'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+      typescript:
+        optional: true
 
   '@prisma/config@6.13.0':
     resolution: {integrity: sha512-OYMM+pcrvj/NqNWCGESSxVG3O7kX6oWuGyvufTUNnDw740KIQvNyA4v0eILgkpuwsKIDU36beZCkUtIt0naTog==}
@@ -701,6 +716,10 @@ snapshots:
       picocolors: 1.1.1
 
   '@babel/helper-validator-identifier@7.27.1': {}
+
+  '@prisma/client@6.13.0(prisma@6.13.0)':
+    optionalDependencies:
+      prisma: 6.13.0
 
   '@prisma/config@6.13.0':
     dependencies:

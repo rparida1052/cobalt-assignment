@@ -1,12 +1,16 @@
+
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
+  postgres:
+    image: postgres:16
+    container_name: demo
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rahul123
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
