@@ -125,19 +125,16 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-2xl">👥</span>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Channel Management</h3>
-          <p className="text-sm text-gray-600">Join channels in {workspaceName} to send messages</p>
-        </div>
+    <div className="border border-gray-200 p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-normal text-gray-900">Channel Management</h3>
+        <p className="text-sm text-gray-500">Join channels in {workspaceName} to send messages</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3">
-            <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
             <span className="text-gray-600">Loading channels...</span>
           </div>
         </div>
@@ -146,18 +143,18 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
           {/* Joined Channels Section */}
           {joinedChannels.length > 0 && (
             <div>
-              <h4 className="text-md font-semibold text-gray-900 mb-3">Joined Channels ({joinedChannels.length})</h4>
+              <h4 className="text-md font-normal text-gray-900 mb-3">Joined Channels ({joinedChannels.length})</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {joinedChannels.map((channel) => (
-                  <div key={channel.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div key={channel.id} className="bg-gray-50 border border-gray-200 p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-medium text-green-800">#{channel.channelName}</span>
-                        <p className="text-xs text-green-600 mt-1">
+                        <span className="font-medium text-gray-900">#{channel.channelName}</span>
+                        <p className="text-xs text-gray-500 mt-1">
                           Joined {new Date(channel.joinedAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <span className="text-green-600 text-sm">✓</span>
+                      <span className="text-gray-600 text-sm">✓</span>
                     </div>
                   </div>
                 ))}
@@ -167,7 +164,7 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
 
           {/* Available Channels Section */}
           <div>
-            <h4 className="text-md font-semibold text-gray-900 mb-3">
+            <h4 className="text-md font-normal text-gray-900 mb-3">
               Available Channels ({channels.length})
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -176,10 +173,10 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
                 return (
                   <div 
                     key={channel.id} 
-                    className={`border rounded-lg p-3 ${
+                    className={`border p-3 ${
                       isJoined 
-                        ? 'bg-green-50 border-green-200' 
-                        : 'bg-gray-50 border-gray-200'
+                        ? 'bg-gray-50 border-gray-200' 
+                        : 'bg-white border-gray-200'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -187,20 +184,20 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-gray-900">#{channel.name}</span>
                           {channel.is_private && (
-                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Private</span>
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1">Private</span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           {channel.num_members} members
                         </p>
                       </div>
                       <button
                         onClick={() => joinChannel(channel)}
                         disabled={isJoined || isJoining}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        className={`px-3 py-1 text-sm transition-colors ${
                           isJoined
-                            ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
+                            : 'bg-gray-900 text-white hover:bg-gray-800'
                         }`}
                       >
                         {isJoined ? 'Joined' : isJoining ? 'Joining...' : 'Join'}
@@ -214,10 +211,9 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-red-50 border border-red-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
-                  <span>⚠️</span>
                   <span>{error}</span>
                 </div>
                 <button 
@@ -234,10 +230,9 @@ const ChannelManager = ({ workspaceId, workspaceName }: ChannelManagerProps) => 
 
           {/* Success Message */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-4 bg-green-50 border border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-green-700 text-sm">
-                  <span>✅</span>
                   <span>{success}</span>
                 </div>
                 <button 

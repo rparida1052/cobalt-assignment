@@ -107,17 +107,16 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+    <div className="border border-gray-200 p-6">
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-2xl">📢</span>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">Send Message to Slack</h3>
-          <p className="text-sm text-gray-600">Send a message to joined channels in {workspaceName}</p>
+          <h3 className="text-lg font-normal text-gray-900">Send Message to Slack</h3>
+          <p className="text-sm text-gray-500">Send a message to joined channels in {workspaceName}</p>
         </div>
         <button
           onClick={fetchJoinedChannels}
           disabled={isLoading}
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
         >
           {isLoading ? 'Loading...' : 'Refresh'}
         </button>
@@ -126,7 +125,7 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3">
-            <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
             <span className="text-gray-600">Loading joined channels...</span>
           </div>
         </div>
@@ -137,7 +136,7 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No Joined Channels</h4>
+          <h4 className="text-lg font-normal text-gray-900 mb-2">No Joined Channels</h4>
           <p className="text-gray-600 mb-4">You need to join channels first before you can send messages.</p>
           <div className="text-sm text-gray-500">
             Go to the Channel Management section to join channels.
@@ -154,7 +153,7 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
               id="channel-select"
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
             >
               <option value="">Select a channel...</option>
               {joinedChannels.map((channel) => (
@@ -176,7 +175,7 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Enter your message for #${getSelectedChannelName()}...`}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 resize-none"
             />
           </div>
 
@@ -184,11 +183,11 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
           <button
             onClick={sendMessage}
             disabled={isSending || !selectedChannel || !message.trim()}
-            className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-gray-900 text-white font-medium transition-colors hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSending ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin"></div>
                 <span>Sending...</span>
               </>
             ) : (
@@ -203,10 +202,9 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-red-50 border border-red-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-red-700 text-sm">
-                  <span>⚠️</span>
                   <span>{error}</span>
                 </div>
                 <button 
@@ -223,10 +221,9 @@ const SlackMessaging = ({ workspaceId, workspaceName }: SlackMessagingProps) => 
 
           {/* Success Message */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-4 bg-green-50 border border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-green-700 text-sm">
-                  <span>✅</span>
                   <span>{success}</span>
                 </div>
                 <button 

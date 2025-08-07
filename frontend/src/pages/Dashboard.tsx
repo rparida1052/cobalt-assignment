@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import DirectSlackMessaging from '../components/DirectSlackMessaging';
 import ScheduledSlackMessaging from '../components/ScheduledSlackMessaging';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Alert, AlertDescription } from '../components/ui/alert';
 
 interface WorkspaceInfo {
   workspaceId: string;
@@ -86,185 +90,173 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-lg shadow-lg">
-          <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-          <span className="font-medium text-gray-700">Loading dashboard...</span>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-4 h-4 border border-border border-t-primary rounded-full animate-spin"></div>
+          <span className="text-muted-foreground">Loading dashboard...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-8 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border py-6">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Dashboard</h1>
-              <p className="text-base sm:text-lg opacity-90">Manage your Slack workspace integration</p>
+              <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground mt-1">Manage your Slack workspace integration</p>
             </div>
-            <button
+            <Button
+              variant="outline"
               onClick={handleLogout}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+              className="flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto w-full p-4 sm:p-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <div>
-                <h3 className="text-lg font-semibold text-red-800 mb-1">Authentication Error</h3>
-                <p className="text-red-700">{error}</p>
-                <a 
-                  href="/" 
-                  className="inline-block mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Try Again
-                </a>
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Authentication Error</h3>
+                  <p>{error}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => navigate('/')}
+                  >
+                    Try Again
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </AlertDescription>
+          </Alert>
         ) : workspaceInfo ? (
-          <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">✅</span>
-                <h3 className="text-lg font-semibold text-green-800">Successfully Connected to Slack!</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-green-200">
-                  <span className="font-semibold text-gray-700">Workspace Name:</span>
-                  <p className="text-green-700 font-medium mt-1">{workspaceInfo.workspaceName}</p>
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Successfully Connected to Slack!</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <span className="font-medium text-muted-foreground">Workspace Name:</span>
+                      <p className="text-foreground font-medium mt-1">{workspaceInfo.workspaceName}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <span className="font-medium text-muted-foreground">Workspace ID:</span>
+                      <p className="text-foreground font-mono text-sm mt-1">{workspaceInfo.workspaceId}</p>
+                    </CardContent>
+                  </Card>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-green-200">
-                  <span className="font-semibold text-gray-700">Workspace ID:</span>
-                  <p className="text-green-700 font-mono text-sm mt-1">{workspaceInfo.workspaceId}</p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Messaging Components with Tabs */}
-            <div className="max-w-6xl mx-auto">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                {/* Tab Navigation */}
-                <div className="border-b border-gray-200">
-                  <nav className="flex space-x-8 px-6" aria-label="Tabs">
-                    <button
-                      onClick={() => setActiveTab('direct')}
-                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                        activeTab === 'direct'
-                          ? 'border-indigo-500 text-indigo-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>🚀</span>
-                        <span>Direct Message</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('scheduled')}
-                      className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                        activeTab === 'scheduled'
-                          ? 'border-indigo-500 text-indigo-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>⏰</span>
-                        <span>Schedule Message</span>
-                      </div>
-                    </button>
-                  </nav>
-                </div>
-
-                {/* Tab Content */}
-                <div className="p-6">
-                  {activeTab === 'direct' ? (
-                    <DirectSlackMessaging 
-                      workspaceId={workspaceInfo.workspaceId}
-                      workspaceName={workspaceInfo.workspaceName}
-                    />
-                  ) : (
-                    <ScheduledSlackMessaging 
-                      workspaceId={workspaceInfo.workspaceId}
-                      workspaceName={workspaceInfo.workspaceName}
-                    />
-                  )}
-                </div>
-              </div>
+            <div className="max-w-4xl mx-auto">
+              <Card>
+                <CardContent className="p-0">
+                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)}>
+                    <div className="border-b border-border">
+                      <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0">
+                        <TabsTrigger value="direct" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                          Direct Message
+                        </TabsTrigger>
+                        <TabsTrigger value="scheduled" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                          Schedule Message
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+                    <div className="p-6">
+                      <TabsContent value="direct">
+                        <DirectSlackMessaging 
+                          workspaceId={workspaceInfo.workspaceId}
+                          workspaceName={workspaceInfo.workspaceName}
+                        />
+                      </TabsContent>
+                      <TabsContent value="scheduled">
+                        <ScheduledSlackMessaging 
+                          workspaceId={workspaceInfo.workspaceId}
+                          workspaceName={workspaceInfo.workspaceName}
+                        />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Additional Features */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-2xl">👥</span>
-                  <h3 className="text-lg font-semibold text-gray-900">Manage Team</h3>
-                </div>
-                <p className="text-gray-600 mb-4">View and manage team members in your workspace.</p>
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                  View Team
-                </button>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manage Team</CardTitle>
+                  <CardDescription>View and manage team members in your workspace.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">View Team</Button>
+                </CardContent>
+              </Card>
 
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-2xl">📋</span>
-                  <h3 className="text-lg font-semibold text-gray-900">Channel Info</h3>
-                </div>
-                <p className="text-gray-600 mb-4">Access and manage channel information and settings.</p>
-                <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                  View Channels
-                </button>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Channel Info</CardTitle>
+                  <CardDescription>Access and manage channel information and settings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">View Channels</Button>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Troubleshooting Section */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">🔧</span>
-                <h3 className="text-lg font-semibold text-blue-800">Troubleshooting</h3>
-              </div>
-              <div className="space-y-3 text-blue-700 text-sm">
-                <p><strong>If messages aren't sending:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Make sure your Slack app has the <code>chat:write</code> permission</li>
-                  <li>Check that the channel exists and is not archived</li>
-                  <li>For private channels, ensure the bot has been invited</li>
-                  <li>Try refreshing the page and reconnecting your workspace</li>
-                </ul>
-                <p className="mt-4"><strong>For scheduled messages:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Scheduled messages will be sent automatically at the specified time</li>
-                  <li>You can delete pending scheduled messages before they are sent</li>
-                  <li>Check the status of your scheduled messages in the Schedule Message tab</li>
-                </ul>
-              </div>
-            </div>
+            <Card className="bg-muted/50">
+              <CardHeader>
+                <CardTitle>Troubleshooting</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <p><strong>If messages aren't sending:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Make sure your Slack app has the <code>chat:write</code> permission</li>
+                    <li>Check that the channel exists and is not archived</li>
+                    <li>For private channels, ensure the bot has been invited</li>
+                    <li>Try refreshing the page and reconnecting your workspace</li>
+                  </ul>
+                  <p className="mt-4"><strong>For scheduled messages:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Scheduled messages will be sent automatically at the specified time</li>
+                    <li>You can delete pending scheduled messages before they are sent</li>
+                    <li>Check the status of your scheduled messages in the Schedule Message tab</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
-          <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 text-center">
-            <span className="text-4xl mb-4 block">🔗</span>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Slack Integration Found</h3>
-            <p className="text-gray-600 mb-4">Connect your Slack workspace to get started.</p>
-            <a 
-              href="/" 
-              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Connect to Slack
-            </a>
-          </div>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <h3 className="text-xl font-semibold mb-2">No Slack Integration Found</h3>
+              <p className="text-muted-foreground mb-4">Connect your Slack workspace to get started.</p>
+              <Button onClick={() => navigate('/')}>
+                Connect to Slack
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>
