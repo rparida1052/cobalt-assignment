@@ -3,6 +3,8 @@ import axios from "axios";
 import logger from "../utils/logger";
 import prismaClient from "../utils/prisma";
 import { SlackService } from "../services/slackService";
+import { messageQueue } from "../services/messageQueue";
+import { QueueMonitor } from "../services/queueMonitor";
 
 const slackAuthInitialise = async (req: Request, res: Response) => {
     const scopes = "channels:read,chat:write,users:read,groups:read";
@@ -146,7 +148,6 @@ const joinSlackChannel = async (req: Request, res: Response) => {
             });
         }
 
-        // Check if already joined
         const existingJoin = await prismaClient.joinedChannel.findUnique({
             where: {
                 workspaceId_channelId: {
@@ -308,7 +309,7 @@ const scheduleSlackMessage = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Workspace not found" });
         }
 
-        // Create scheduled message
+        // Create scheduled message in database
         const scheduledMessage = await prismaClient.scheduledMessage.create({
             data: {
                 workspaceId,
@@ -316,8 +317,32 @@ const scheduleSlackMessage = async (req: Request, res: Response) => {
                 channelName,
                 message,
                 scheduledAt: scheduledTime,
+                status: 'pending'
             },
         });
+
+        // Calculate delay in milliseconds
+        const delay = scheduledTime.getTime() - now.getTime();
+
+        // Add job to queue with delay
+        await messageQueue.add(
+            'send-message',
+            {
+                messageId: scheduledMessage.id,
+                workspaceId,
+                channelId,
+                message: scheduledMessage.message
+            },
+            {
+                delay, // Delay until scheduled time
+                jobId: scheduledMessage.id, // Use message ID as job ID
+                priority: 1, // High priority
+                removeOnComplete: true,
+                removeOnFail: false, // Keep failed jobs for debugging
+            }
+        );
+
+        logger.info(`Message ${scheduledMessage.id} scheduled for ${scheduledAt}`);
 
         res.json({
             success: true,
@@ -380,7 +405,7 @@ const deleteScheduledMessage = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Workspace not found" });
         }
 
-        // Delete scheduled message
+        // Delete scheduled message from database
         const deletedMessage = await prismaClient.scheduledMessage.deleteMany({
             where: {
                 id: messageId,
@@ -390,6 +415,17 @@ const deleteScheduledMessage = async (req: Request, res: Response) => {
 
         if (deletedMessage.count === 0) {
             return res.status(404).json({ error: "Scheduled message not found" });
+        }
+
+        // Remove job from queue if it exists
+        try {
+            const job = await messageQueue.getJob(messageId);
+            if (job) {
+                await job.remove();
+                logger.info(`Job ${messageId} removed from queue`);
+            }
+        } catch (queueError) {
+            logger.warn(`Could not remove job ${messageId} from queue:`, queueError);
         }
 
         res.json({
@@ -415,4 +451,102 @@ const getCacheStats = async (req: Request, res: Response) => {
     }
 };
 
-export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage, getCacheStats};
+// Queue monitoring endpoints
+const getQueueStats = async (req: Request, res: Response) => {
+    try {
+        const stats = await QueueMonitor.getQueueStats();
+        res.json({ 
+            success: true, 
+            queueStats: stats 
+        });
+    } catch (error) {
+        logger.error("Error getting queue stats:", error);
+        res.status(500).json({ error: "Failed to get queue stats" });
+    }
+};
+
+const getFailedJobs = async (req: Request, res: Response) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 10;
+        const failedJobs = await QueueMonitor.getFailedJobs(limit);
+        res.json({ 
+            success: true, 
+            failedJobs 
+        });
+    } catch (error) {
+        logger.error("Error getting failed jobs:", error);
+        res.status(500).json({ error: "Failed to get failed jobs" });
+    }
+};
+
+const retryFailedJob = async (req: Request, res: Response) => {
+    try {
+        const { jobId } = req.params;
+        const result = await QueueMonitor.retryFailedJob(jobId);
+        res.json(result);
+    } catch (error) {
+        logger.error("Error retrying job:", error);
+        res.status(500).json({ error: "Failed to retry job" });
+    }
+};
+
+const getJobDetails = async (req: Request, res: Response) => {
+    try {
+        const { jobId } = req.params;
+        const jobDetails = await QueueMonitor.getJobDetails(jobId);
+        
+        if (!jobDetails) {
+            return res.status(404).json({ error: "Job not found" });
+        }
+        
+        res.json({ 
+            success: true, 
+            jobDetails 
+        });
+    } catch (error) {
+        logger.error("Error getting job details:", error);
+        res.status(500).json({ error: "Failed to get job details" });
+    }
+};
+
+const clearCompletedJobs = async (req: Request, res: Response) => {
+    try {
+        const result = await QueueMonitor.clearCompletedJobs();
+        res.json(result);
+    } catch (error) {
+        logger.error("Error clearing completed jobs:", error);
+        res.status(500).json({ error: "Failed to clear completed jobs" });
+    }
+};
+
+const clearFailedJobs = async (req: Request, res: Response) => {
+    try {
+        const result = await QueueMonitor.clearFailedJobs();
+        res.json(result);
+    } catch (error) {
+        logger.error("Error clearing failed jobs:", error);
+        res.status(500).json({ error: "Failed to clear failed jobs" });
+    }
+};
+
+const pauseQueue = async (req: Request, res: Response) => {
+    try {
+        const result = await QueueMonitor.pauseQueue();
+        res.json(result);
+    } catch (error) {
+        logger.error("Error pausing queue:", error);
+        res.status(500).json({ error: "Failed to pause queue" });
+    }
+};
+
+const resumeQueue = async (req: Request, res: Response) => {
+    try {
+        const result = await QueueMonitor.resumeQueue();
+        res.json(result);
+    } catch (error) {
+        logger.error("Error resuming queue:", error);
+        res.status(500).json({ error: "Failed to resume queue" });
+    }
+};
+
+export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage, getCacheStats, getQueueStats, getFailedJobs, retryFailedJob, getJobDetails, clearCompletedJobs, clearFailedJobs, pauseQueue, resumeQueue};
