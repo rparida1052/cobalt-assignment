@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 import logger from "../utils/logger";
 import prismaClient from "../utils/prisma";
+import { SlackService } from "../services/slackService";
 
 const slackAuthInitialise = async (req: Request, res: Response) => {
     const scopes = "channels:read,chat:write,users:read,groups:read";
@@ -117,73 +118,10 @@ const getSlackChannels = async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Workspace ID is required" });
         }
 
-        // Get workspace from database
-        const workspace = await prismaClient.workspace.findUnique({
-            where: { workspaceId: workspaceId as string }
-        });
+        const slackService = new SlackService(workspaceId as string);
+        const response = await slackService.getChannels() as any;
 
-        if (!workspace) {
-            return res.status(404).json({ error: "Workspace not found" });
-        }
-
-        // Check if token is expired and refresh if needed
-        if (workspace.expiresAt < new Date()) {
-            try {
-                const refreshResponse = await axios.post(
-                    "https://slack.com/api/oauth.v2.access",
-                    new URLSearchParams({
-                        grant_type: "refresh_token",
-                        client_id: process.env.SLACK_CLIENT_ID!,
-                        client_secret: process.env.SLACK_CLIENT_SECRET!,
-                        refresh_token: workspace.refreshToken,
-                    }),
-                    {
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
-                    }
-                );
-
-                if (refreshResponse.data.ok) {
-                    // Update the workspace with new tokens
-                    await prismaClient.workspace.update({
-                        where: { workspaceId: workspaceId as string },
-                        data: {
-                            accessToken: refreshResponse.data.access_token,
-                            refreshToken: refreshResponse.data.refresh_token,
-                            expiresAt: new Date(Date.now() + refreshResponse.data.expires_in * 1000),
-                        }
-                    });
-                    workspace.accessToken = refreshResponse.data.access_token;
-                }
-            } catch (refreshError) {
-                logger.error("Token refresh failed:", refreshError);
-                return res.status(401).json({ error: "Token refresh failed" });
-            }
-        }
-
-        // Fetch channels from Slack
-        const channelResponse = await axios.get("https://slack.com/api/conversations.list", {
-            headers: {
-                Authorization: `Bearer ${workspace.accessToken}`,
-                
-            },
-            params: {
-                types: "public_channel,private_channel",
-                exclude_archived: true,
-            }
-        });
-
-        console.log("channels response", channelResponse.data);
-
-        if (!channelResponse.data.ok) {
-            return res.status(500).json({ 
-                error: "Failed to fetch channels from Slack",
-                details: channelResponse.data.error 
-            });
-        }
-
-        const channels = channelResponse.data.channels.map((channel: any) => ({
+        const channels = response.channels.map((channel: any) => ({
             id: channel.id,
             name: channel.name,
             is_private: channel.is_private,
@@ -208,54 +146,6 @@ const joinSlackChannel = async (req: Request, res: Response) => {
             });
         }
 
-        // Get workspace from database
-        const workspace = await prismaClient.workspace.findUnique({
-            where: { workspaceId }
-        });
-
-        if (!workspace) {
-            return res.status(404).json({ error: "Workspace not found" });
-        }
-
-        // Check if token is expired and refresh if needed
-        if (workspace.expiresAt < new Date()) {
-            try {
-                const refreshResponse = await axios.post(
-                    "https://slack.com/api/oauth.v2.access",
-                    new URLSearchParams({
-                        grant_type: "refresh_token",
-                        client_id: process.env.SLACK_CLIENT_ID!,
-                        client_secret: process.env.SLACK_CLIENT_SECRET!,
-                        refresh_token: workspace.refreshToken,
-                    }),
-                    {
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
-                    }
-                );
-
-                if (refreshResponse.data.ok) {
-                    // Update the workspace with new tokens
-                    await prismaClient.workspace.update({
-                        where: { workspaceId },
-                        data: {
-                            accessToken: refreshResponse.data.access_token,
-                            refreshToken: refreshResponse.data.refresh_token,
-                            expiresAt: new Date(Date.now() + refreshResponse.data.expires_in * 1000),
-                        }
-                    });
-                    workspace.accessToken = refreshResponse.data.access_token;
-                } else {
-                    logger.error("Token refresh failed:", refreshResponse.data);
-                    return res.status(401).json({ error: "Token refresh failed: " + refreshResponse.data.error });
-                }
-            } catch (refreshError) {
-                logger.error("Token refresh failed:", refreshError);
-                return res.status(401).json({ error: "Token refresh failed" });
-            }
-        }
-
         // Check if already joined
         const existingJoin = await prismaClient.joinedChannel.findUnique({
             where: {
@@ -272,56 +162,44 @@ const joinSlackChannel = async (req: Request, res: Response) => {
             });
         }
 
-        // Join channel in Slack
-        const joinResponse = await axios.post(
-            "https://slack.com/api/conversations.join",
-            {
-                channel: channelId,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${workspace.accessToken}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
+        const slackService = new SlackService(workspaceId);
+        
+        try {
+            await slackService.joinChannel(channelId);
+            
+            // Save joined channel to database
+            const joinedChannel = await prismaClient.joinedChannel.create({
+                data: {
+                    workspaceId,
+                    channelId,
+                    channelName,
+                    isPrivate: false,
+                }
+            });
 
-        console.log("Join channel response:", joinResponse.data);
-
-        if (!joinResponse.data.ok) {
+            res.json({ 
+                success: true, 
+                message: "Successfully joined channel",
+                channel: joinedChannel
+            });
+        } catch (error: any) {
             // Handle specific Slack errors
             let errorMessage = "Failed to join channel in Slack";
-            if (joinResponse.data.error === "channel_not_found") {
+            if (error.message?.includes('channel_not_found')) {
                 errorMessage = "Channel not found. It may be private or archived.";
-            } else if (joinResponse.data.error === "already_in_channel") {
+            } else if (error.message?.includes('already_in_channel')) {
                 errorMessage = "Already a member of this channel";
-            } else if (joinResponse.data.error === "access_denied") {
+            } else if (error.message?.includes('access_denied')) {
                 errorMessage = "Access denied. The bot may not have permission to join this channel.";
-            } else if (joinResponse.data.error) {
-                errorMessage = `Slack error: ${joinResponse.data.error}`;
+            } else if (error.message) {
+                errorMessage = `Slack error: ${error.message}`;
             }
             
             return res.status(500).json({ 
                 error: errorMessage,
-                details: joinResponse.data.error 
+                details: error.message 
             });
         }
-
-        // Save joined channel to database
-        const joinedChannel = await prismaClient.joinedChannel.create({
-            data: {
-                workspaceId,
-                channelId,
-                channelName,
-                isPrivate: false, // We'll update this if needed
-            }
-        });
-
-        res.json({ 
-            success: true, 
-            message: "Successfully joined channel",
-            channel: joinedChannel
-        });
     } catch (error) {
         logger.error("Error joining Slack channel:", error);
         
@@ -372,144 +250,28 @@ const sendSlackMessage = async (req: Request, res: Response) => {
         });
       }
   
-      // Get workspace from database
-      const workspace = await prismaClient.workspace.findUnique({
-        where: { workspaceId },
-      });
-  
-      if (!workspace) {
-        return res.status(404).json({ error: "Workspace not found" });
-      }
-  
-      // Refresh token if expired
-      if (workspace.expiresAt < new Date()) {
-        try {
-          const refreshResponse = await axios.post(
-            "https://slack.com/api/oauth.v2.access",
-            new URLSearchParams({
-              grant_type: "refresh_token",
-              client_id: process.env.SLACK_CLIENT_ID!,
-              client_secret: process.env.SLACK_CLIENT_SECRET!,
-              refresh_token: workspace.refreshToken,
-            }),
-            {
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-            }
-          );
-  
-          if (refreshResponse.data.ok) {
-            await prismaClient.workspace.update({
-              where: { workspaceId },
-              data: {
-                accessToken: refreshResponse.data.access_token,
-                refreshToken: refreshResponse.data.refresh_token,
-                expiresAt: new Date(Date.now() + refreshResponse.data.expires_in * 1000),
-              },
-            });
-            workspace.accessToken = refreshResponse.data.access_token;
-          }
-        } catch (refreshError) {
-          logger.error("Token refresh failed:", refreshError);
-          return res.status(401).json({ error: "Token refresh failed" });
-        }
-      }
-  
-      // Define a helper function to send message
-      const attemptSendMessage = async (): Promise<{
-        success: boolean;
-        response?: any;
-        error?: string;
-      }> => {
-        try {
-          const messageResponse = await axios.post(
-            "https://slack.com/api/chat.postMessage",
-            {
-              channel: channelId,
-              text: message,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${workspace.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-  
-          if (!messageResponse.data.ok) {
-            return {
-              success: false,
-              error: messageResponse.data.error,
-            };
-          }
-  
-          return {
-            success: true,
-            response: messageResponse.data,
-          };
-        } catch (err) {
-          logger.error("Slack API error:", err);
-          return { success: false, error: "Slack API call failed" };
-        }
-      };
-  
-      // 1st attempt
-      const firstAttempt = await attemptSendMessage();
-  
-      // If bot is not in the channel, try to join and resend
-      if (!firstAttempt.success && firstAttempt.error === "not_in_channel") {
-        try {
-          await axios.post(
-            "https://slack.com/api/conversations.join",
-            { channel: channelId },
-            {
-              headers: {
-                Authorization: `Bearer ${workspace.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          logger.info(`Bot joined channel ${channelId}`);
-  
-          // Retry sending the message
-          const secondAttempt = await attemptSendMessage();
-  
-          if (!secondAttempt.success) {
-            return res.status(500).json({
-              error: "Failed to send message after joining channel",
-              details: secondAttempt.error,
-            });
-          }
-  
-          return res.json({
-            success: true,
-            message: "Message sent successfully (after joining channel)",
-            timestamp: secondAttempt.response.ts,
-          });
-        } catch (joinError: any) {
-          logger.error("Failed to join channel:", joinError);
-          return res.status(500).json({
-            error: "Bot could not join the channel",
-            details: joinError?.response?.data || joinError.message,
-          });
-        }
-      }
-  
-      // Success in first attempt
-      if (firstAttempt.success) {
+      const slackService = new SlackService(workspaceId);
+      
+      try {
+        const result = await slackService.sendMessage(channelId, message) as any;
         return res.json({
           success: true,
           message: "Message sent successfully",
-          timestamp: firstAttempt.response.ts,
+          timestamp: result.ts,
         });
+      } catch (error: any) {
+        // Handle "not_in_channel" error by joining first
+        if (error.message?.includes('not_in_channel')) {
+          await slackService.joinChannel(channelId);
+          const result = await slackService.sendMessage(channelId, message) as any;
+          return res.json({
+            success: true,
+            message: "Message sent successfully (after joining channel)",
+            timestamp: result.ts,
+          });
+        }
+        throw error;
       }
-  
-      // Fallback error
-      return res.status(500).json({
-        error: "Failed to send message to Slack",
-        details: firstAttempt.error,
-      });
     } catch (error) {
       logger.error("Error sending Slack message:", error);
       res.status(500).json({ error: "Failed to send message" });
@@ -640,4 +402,17 @@ const deleteScheduledMessage = async (req: Request, res: Response) => {
     }
 };
 
-export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage};
+const getCacheStats = async (req: Request, res: Response) => {
+    try {
+        const stats = SlackService.getCacheStats();
+        res.json({ 
+            success: true, 
+            cacheStats: stats 
+        });
+    } catch (error) {
+        logger.error("Error getting cache stats:", error);
+        res.status(500).json({ error: "Failed to get cache stats" });
+    }
+};
+
+export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage, getCacheStats};

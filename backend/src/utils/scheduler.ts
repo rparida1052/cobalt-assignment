@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import axios from 'axios';
 import logger from './logger';
 import prismaClient from './prisma';
+import { tokenCache } from './tokenCache';
 
 // Function to send a scheduled message
 const sendScheduledMessage = async (scheduledMessage: any) => {
@@ -12,60 +13,8 @@ const sendScheduledMessage = async (scheduledMessage: any) => {
       data: { status: 'sending' }
     });
 
-    // Get workspace to get access token
-    const workspace = await prismaClient.workspace.findUnique({
-      where: { workspaceId: scheduledMessage.workspaceId }
-    });
-
-    if (!workspace) {
-      logger.error(`Workspace not found for scheduled message ${scheduledMessage.id}`);
-      await prismaClient.scheduledMessage.update({
-        where: { id: scheduledMessage.id },
-        data: { status: 'failed' }
-      });
-      return;
-    }
-
-    // Check if token is expired and refresh if needed
-    if (workspace.expiresAt < new Date()) {
-      try {
-        const refreshResponse = await axios.post(
-          "https://slack.com/api/oauth.v2.access",
-          new URLSearchParams({
-            grant_type: "refresh_token",
-            client_id: process.env.SLACK_CLIENT_ID!,
-            client_secret: process.env.SLACK_CLIENT_SECRET!,
-            refresh_token: workspace.refreshToken,
-          }),
-          {
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-          }
-        );
-
-        if (refreshResponse.data.ok) {
-          await prismaClient.workspace.update({
-            where: { workspaceId: scheduledMessage.workspaceId },
-            data: {
-              accessToken: refreshResponse.data.access_token,
-              refreshToken: refreshResponse.data.refresh_token,
-              expiresAt: new Date(Date.now() + refreshResponse.data.expires_in * 1000),
-            }
-          });
-          workspace.accessToken = refreshResponse.data.access_token;
-        } else {
-          throw new Error('Token refresh failed');
-        }
-      } catch (refreshError) {
-        logger.error("Token refresh failed for scheduled message:", refreshError);
-        await prismaClient.scheduledMessage.update({
-          where: { id: scheduledMessage.id },
-          data: { status: 'failed' }
-        });
-        return;
-      }
-    }
+    // Get cached token (automatically refreshes if needed)
+    const accessToken = await tokenCache.getValidToken(scheduledMessage.workspaceId);
 
     // Send message to Slack
     const messageResponse = await axios.post(
@@ -76,7 +25,7 @@ const sendScheduledMessage = async (scheduledMessage: any) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${workspace.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -101,7 +50,7 @@ const sendScheduledMessage = async (scheduledMessage: any) => {
             { channel: scheduledMessage.channelId },
             {
               headers: {
-                Authorization: `Bearer ${workspace.accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
               },
             }
@@ -116,7 +65,7 @@ const sendScheduledMessage = async (scheduledMessage: any) => {
             },
             {
               headers: {
-                Authorization: `Bearer ${workspace.accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
               },
             }
