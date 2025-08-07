@@ -107,7 +107,7 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+    <div className="w-full">
       <div className="flex items-center gap-3 mb-6">
         <span className="text-2xl">🚀</span>
         <div className="flex-1">

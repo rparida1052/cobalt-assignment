@@ -14,10 +14,12 @@
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
     "@prisma/client": "6.13.0",
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "node-cron": "^4.2.1",
     "nodemon": "^3.1.10",
     "prisma": "^6.13.0"
   },

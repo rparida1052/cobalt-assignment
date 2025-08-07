@@ -9,6 +9,9 @@ export const API_ENDPOINTS = {
   SLACK_JOIN_CHANNEL: `${BACKEND_URL}/auth/slack/join-channel`,
   SLACK_JOINED_CHANNELS: `${BACKEND_URL}/auth/slack/joined-channels`,
   SLACK_SEND_MESSAGE: `${BACKEND_URL}/auth/slack/send-message`,
+  SLACK_SCHEDULE_MESSAGE: `${BACKEND_URL}/auth/slack/schedule-message`,
+  SLACK_SCHEDULED_MESSAGES: `${BACKEND_URL}/auth/slack/scheduled-messages`,
+  SLACK_DELETE_SCHEDULED_MESSAGE: `${BACKEND_URL}/auth/slack/scheduled-messages`,
 } as const;
 
 // Environment check

@@ -487,7 +487,7 @@ const sendSlackMessage = async (req: Request, res: Response) => {
             message: "Message sent successfully (after joining channel)",
             timestamp: secondAttempt.response.ts,
           });
-        } catch (joinError) {
+        } catch (joinError: any) {
           logger.error("Failed to join channel:", joinError);
           return res.status(500).json({
             error: "Bot could not join the channel",
@@ -517,4 +517,127 @@ const sendSlackMessage = async (req: Request, res: Response) => {
   };
   
 
-export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage};
+const scheduleSlackMessage = async (req: Request, res: Response) => {
+    try {
+        const { workspaceId, channelId, channelName, message, scheduledAt } = req.body;
+
+        if (!workspaceId || !channelId || !channelName || !message || !scheduledAt) {
+            return res.status(400).json({
+                error: "Workspace ID, channel ID, channel name, message, and scheduled time are required",
+            });
+        }
+
+        // Validate scheduled time is in the future
+        const scheduledTime = new Date(scheduledAt);
+        const now = new Date();
+        
+        if (scheduledTime <= now) {
+            return res.status(400).json({
+                error: "Scheduled time must be in the future",
+            });
+        }
+
+        // Get workspace from database
+        const workspace = await prismaClient.workspace.findUnique({
+            where: { workspaceId },
+        });
+
+        if (!workspace) {
+            return res.status(404).json({ error: "Workspace not found" });
+        }
+
+        // Create scheduled message
+        const scheduledMessage = await prismaClient.scheduledMessage.create({
+            data: {
+                workspaceId,
+                channelId,
+                channelName,
+                message,
+                scheduledAt: scheduledTime,
+            },
+        });
+
+        res.json({
+            success: true,
+            message: "Message scheduled successfully",
+            scheduledMessage,
+        });
+    } catch (error) {
+        logger.error("Error scheduling Slack message:", error);
+        res.status(500).json({ error: "Failed to schedule message" });
+    }
+};
+
+const getScheduledMessages = async (req: Request, res: Response) => {
+    try {
+        const { workspaceId } = req.query;
+
+        if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+        }
+
+        // Get workspace from database
+        const workspace = await prismaClient.workspace.findUnique({
+            where: { workspaceId: workspaceId as string },
+        });
+
+        if (!workspace) {
+            return res.status(404).json({ error: "Workspace not found" });
+        }
+
+        // Get scheduled messages
+        const scheduledMessages = await prismaClient.scheduledMessage.findMany({
+            where: { workspaceId: workspaceId as string },
+            orderBy: { scheduledAt: 'asc' },
+        });
+
+        res.json({ scheduledMessages });
+    } catch (error) {
+        logger.error("Error fetching scheduled messages:", error);
+        res.status(500).json({ error: "Failed to fetch scheduled messages" });
+    }
+};
+
+const deleteScheduledMessage = async (req: Request, res: Response) => {
+    try {
+        const { messageId } = req.params;
+        const { workspaceId } = req.body;
+
+        if (!messageId || !workspaceId) {
+            return res.status(400).json({
+                error: "Message ID and workspace ID are required",
+            });
+        }
+
+        // Get workspace from database
+        const workspace = await prismaClient.workspace.findUnique({
+            where: { workspaceId },
+        });
+
+        if (!workspace) {
+            return res.status(404).json({ error: "Workspace not found" });
+        }
+
+        // Delete scheduled message
+        const deletedMessage = await prismaClient.scheduledMessage.deleteMany({
+            where: {
+                id: messageId,
+                workspaceId,
+            },
+        });
+
+        if (deletedMessage.count === 0) {
+            return res.status(404).json({ error: "Scheduled message not found" });
+        }
+
+        res.json({
+            success: true,
+            message: "Scheduled message deleted successfully",
+        });
+    } catch (error) {
+        logger.error("Error deleting scheduled message:", error);
+        res.status(500).json({ error: "Failed to delete scheduled message" });
+    }
+};
+
+export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage};

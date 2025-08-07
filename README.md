@@ -1,6 +1,6 @@
-# Slack OAuth Integration with Direct Messaging
+# Slack OAuth Integration with Direct Messaging and Message Scheduling
 
-A full-stack application that allows users to authenticate with Slack and send messages directly to channels without requiring manual channel joining.
+A full-stack application that allows users to authenticate with Slack and send messages directly to channels or schedule them for later delivery.
 
 ## 🚀 Features
 
@@ -10,6 +10,12 @@ A full-stack application that allows users to authenticate with Slack and send m
 - Support for both public and private channels
 - Real-time error handling and user feedback
 
+### ✅ Message Scheduling
+- Schedule messages to be sent at specific dates and times
+- View all scheduled messages with their status
+- Delete pending scheduled messages before they're sent
+- Automatic message delivery using background scheduler
+
 ### ✅ Improved Error Handling
 - Detailed error messages for better debugging
 - Automatic token refresh handling
@@ -17,9 +23,10 @@ A full-stack application that allows users to authenticate with Slack and send m
 - User-friendly error messages
 
 ### ✅ Modern UI/UX
-- Clean, responsive design
+- Clean, responsive design with tabbed interface
 - Loading states and success/error feedback
 - Channel selection with member counts
+- Scheduled message management
 - Troubleshooting guide included
 
 ## 🛠️ Quick Start
@@ -68,6 +75,7 @@ refold-assignment/
 │   ├── src/
 │   │   ├── controllers/auth.controller.ts  # Slack API handlers
 │   │   ├── routes/auth.route.ts           # API routes
+│   │   ├── utils/scheduler.ts             # Message scheduler
 │   │   └── app.ts                         # Express app setup
 │   ├── prisma/
 │   │   └── schema.prisma                  # Database schema
@@ -75,9 +83,10 @@ refold-assignment/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   └── DirectSlackMessaging.tsx  # Main messaging component
+│   │   │   ├── DirectSlackMessaging.tsx  # Direct messaging component
+│   │   │   └── ScheduledSlackMessaging.tsx # Scheduled messaging component
 │   │   ├── pages/
-│   │   │   └── Dashboard.tsx             # Dashboard page
+│   │   │   └── Dashboard.tsx             # Dashboard page with tabs
 │   │   └── config.ts                      # API configuration
 │   └── package.json
 └── setup-backend.md                       # Detailed setup guide
@@ -91,6 +100,13 @@ refold-assignment/
 3. **Direct Send**: System attempts to send message directly
 4. **Auto-Join**: If needed, bot automatically joins the channel
 5. **Success**: Message is sent and user gets confirmation
+
+### Message Scheduling Flow
+1. **Channel Selection**: User selects a channel from the dropdown
+2. **Message Input**: User enters their message
+3. **Schedule Setup**: User sets date and time for delivery
+4. **Schedule Creation**: Message is saved to database
+5. **Background Delivery**: Scheduler automatically sends message at scheduled time
 
 ### Error Handling
 - **Authentication Errors**: Clear messages about reconnecting
@@ -118,6 +134,11 @@ refold-assignment/
    - Run `npx prisma generate` in backend directory
    - Check your `DATABASE_URL` in `.env`
 
+5. **Scheduled messages not sending**
+   - Check that the backend scheduler is running
+   - Verify the scheduled time is in the future
+   - Check server logs for scheduler errors
+
 ### Testing
 ```bash
 # Test backend endpoints
@@ -137,6 +158,9 @@ pnpm run dev
 | `/auth/slack/callback` | GET | Handle OAuth callback |
 | `/auth/slack/channels` | GET | Get available channels |
 | `/auth/slack/send-message` | POST | Send message to channel |
+| `/auth/slack/schedule-message` | POST | Schedule message for later |
+| `/auth/slack/scheduled-messages` | GET | Get scheduled messages |
+| `/auth/slack/scheduled-messages/:id` | DELETE | Delete scheduled message |
 | `/auth/slack/joined-channels` | GET | Get joined channels |
 | `/auth/slack/join-channel` | POST | Join a channel |
 
@@ -148,12 +172,15 @@ pnpm run dev
 - Limited error feedback
 - Database dependency issues
 
-### After (Direct Messaging)
+### After (Direct Messaging + Scheduling)
 - ✅ Direct message sending
+- ✅ Message scheduling functionality
 - ✅ Automatic channel joining
+- ✅ Background message delivery
 - ✅ Better error handling
 - ✅ Simplified user experience
 - ✅ Robust error messages
+- ✅ Tabbed interface for better organization
 
 ## 📝 Environment Variables
 
@@ -182,6 +209,15 @@ cd frontend
 pnpm build
 # Deploy dist/ folder to your hosting service
 ```
+
+## 🔄 Background Scheduler
+
+The application includes a background scheduler that runs every minute to check for and send scheduled messages. The scheduler:
+
+- Automatically refreshes expired tokens
+- Handles channel joining if needed
+- Updates message status (pending → sent/failed)
+- Logs all activities for debugging
 
 ## 📄 License
 

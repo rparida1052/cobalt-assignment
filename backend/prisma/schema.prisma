@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,6 +22,7 @@ model Workspace {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   joinedChannels  JoinedChannel[]
+  scheduledMessages ScheduledMessage[]
 }
 
 model JoinedChannel {
@@ -34,6 +35,23 @@ model JoinedChannel {
   workspace   Workspace @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
 
   @@unique([workspaceId, channelId])
+}
+
+model ScheduledMessage {
+  id          String    @id @default(cuid())
+  workspaceId String
+  channelId   String
+  channelName String
+  message     String
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String    @default("pending") // pending, sending, sent, failed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
+
+  @@index([workspaceId, scheduledAt])
+  @@index([status, scheduledAt])
 }
 
 
