@@ -459,16 +459,6 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
               </div>
             )}
           </div>
-
-          {/* Info Box */}
-          <Card className="bg-muted/50">
-            <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium mb-1">Message Scheduling</p>
-                <p>Schedule messages to be sent at a specific date and time. Messages will be sent automatically when the scheduled time arrives.</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>

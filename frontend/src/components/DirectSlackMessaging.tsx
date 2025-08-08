@@ -244,16 +244,6 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Info Box */}
-          <Card className="bg-muted/50">
-            <CardContent className="pt-6">
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium mb-1">Direct Messaging</p>
-                <p>This feature sends messages directly to channels without requiring you to join them first. The bot will automatically join the channel if needed.</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>

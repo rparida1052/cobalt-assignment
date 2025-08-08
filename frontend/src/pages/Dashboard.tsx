@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Car } from 'lucide-react';
 
 interface WorkspaceInfo {
   workspaceId: string;
@@ -44,7 +45,6 @@ const Dashboard = () => {
       }
     }
 
-    // If no localStorage data, check URL parameters for OAuth success
     const urlParams = new URLSearchParams(window.location.search);
     const oauthStatus = urlParams.get('oauth');
     const workspaceId = urlParams.get('workspaceId');
@@ -57,7 +57,6 @@ const Dashboard = () => {
     console.log("errorMessage", errorMessage);
 
     if (oauthStatus === 'success' && workspaceId && workspaceName) {
-      // ✅ FIXED: Only save to localStorage when data is valid
       const decodedWorkspaceName = decodeURIComponent(workspaceName);
       localStorage.setItem('user', JSON.stringify({
         isAuthenticated: true,
@@ -165,7 +164,11 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
-
+            <Card>
+              <div className='flex items-center gap-2 p-4'>
+                <p className='text-red-500'>Please join the bot first to the channel which you want to send messages to</p>
+              </div>
+            </Card>
             {/* Messaging Components with Tabs */}
             <div className="max-w-4xl mx-auto">
               <Card>
@@ -198,54 +201,7 @@ const Dashboard = () => {
                   </Tabs>
                 </CardContent>
               </Card>
-            </div>
-
-            {/* Additional Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manage Team</CardTitle>
-                  <CardDescription>View and manage team members in your workspace.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">View Team</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Channel Info</CardTitle>
-                  <CardDescription>Access and manage channel information and settings.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">View Channels</Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Troubleshooting Section */}
-            <Card className="bg-muted/50">
-              <CardHeader>
-                <CardTitle>Troubleshooting</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm text-muted-foreground">
-                  <p><strong>If messages aren't sending:</strong></p>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Make sure your Slack app has the <code>chat:write</code> permission</li>
-                    <li>Check that the channel exists and is not archived</li>
-                    <li>For private channels, ensure the bot has been invited</li>
-                    <li>Try refreshing the page and reconnecting your workspace</li>
-                  </ul>
-                  <p className="mt-4"><strong>For scheduled messages:</strong></p>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Scheduled messages will be sent automatically at the specified time</li>
-                    <li>You can delete pending scheduled messages before they are sent</li>
-                    <li>Check the status of your scheduled messages in the Schedule Message tab</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+            </div>       
           </div>
         ) : (
           <Card>
