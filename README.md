@@ -2,6 +2,14 @@
 
 A full-stack application that enables seamless Slack workspace integration with direct messaging and message scheduling capabilities. Built with React, TypeScript, Node.js, Express and Prisma.
 
+## Demo Of The Application
+
+
+<p align="center">
+  <a href="https://youtu.be/LuE3jXH4ZA8">
+    <img src="https://i9.ytimg.com/vi_webp/LuE3jXH4ZA8/mqdefault.webp?v=6895d23d&sqp=CKij18QG&rs=AOn4CLAXdubOsYlFQ4dSwIFjcRMbN7OKkg" alt="Assignemnet Demo" />
+  </a>
+</p>
 ##  Features
 
 ## OAuth Authentication
