@@ -4,7 +4,6 @@ import logger from "../utils/logger";
 import prismaClient from "../utils/prisma";
 import { SlackService } from "../services/slackService";
 import { messageQueue } from "../services/messageQueue";
-import { QueueMonitor } from "../services/queueMonitor";
 
 const slackAuthInitialise = async (req: Request, res: Response) => {
     const scopes = "channels:read,chat:write,users:read,groups:read";
@@ -451,102 +450,15 @@ const getCacheStats = async (req: Request, res: Response) => {
     }
 };
 
-// Queue monitoring endpoints
-const getQueueStats = async (req: Request, res: Response) => {
-    try {
-        const stats = await QueueMonitor.getQueueStats();
-        res.json({ 
-            success: true, 
-            queueStats: stats 
-        });
-    } catch (error) {
-        logger.error("Error getting queue stats:", error);
-        res.status(500).json({ error: "Failed to get queue stats" });
-    }
+export {
+  slackAuthInitialise,
+  slackHandleCallback,
+  getSlackChannels,
+  joinSlackChannel,
+  getJoinedChannels,
+  sendSlackMessage,
+  scheduleSlackMessage,
+  getScheduledMessages,
+  deleteScheduledMessage,
+  getCacheStats,
 };
-
-const getFailedJobs = async (req: Request, res: Response) => {
-    try {
-        const limit = parseInt(req.query.limit as string) || 10;
-        const failedJobs = await QueueMonitor.getFailedJobs(limit);
-        res.json({ 
-            success: true, 
-            failedJobs 
-        });
-    } catch (error) {
-        logger.error("Error getting failed jobs:", error);
-        res.status(500).json({ error: "Failed to get failed jobs" });
-    }
-};
-
-const retryFailedJob = async (req: Request, res: Response) => {
-    try {
-        const { jobId } = req.params;
-        const result = await QueueMonitor.retryFailedJob(jobId);
-        res.json(result);
-    } catch (error) {
-        logger.error("Error retrying job:", error);
-        res.status(500).json({ error: "Failed to retry job" });
-    }
-};
-
-const getJobDetails = async (req: Request, res: Response) => {
-    try {
-        const { jobId } = req.params;
-        const jobDetails = await QueueMonitor.getJobDetails(jobId);
-        
-        if (!jobDetails) {
-            return res.status(404).json({ error: "Job not found" });
-        }
-        
-        res.json({ 
-            success: true, 
-            jobDetails 
-        });
-    } catch (error) {
-        logger.error("Error getting job details:", error);
-        res.status(500).json({ error: "Failed to get job details" });
-    }
-};
-
-const clearCompletedJobs = async (req: Request, res: Response) => {
-    try {
-        const result = await QueueMonitor.clearCompletedJobs();
-        res.json(result);
-    } catch (error) {
-        logger.error("Error clearing completed jobs:", error);
-        res.status(500).json({ error: "Failed to clear completed jobs" });
-    }
-};
-
-const clearFailedJobs = async (req: Request, res: Response) => {
-    try {
-        const result = await QueueMonitor.clearFailedJobs();
-        res.json(result);
-    } catch (error) {
-        logger.error("Error clearing failed jobs:", error);
-        res.status(500).json({ error: "Failed to clear failed jobs" });
-    }
-};
-
-const pauseQueue = async (req: Request, res: Response) => {
-    try {
-        const result = await QueueMonitor.pauseQueue();
-        res.json(result);
-    } catch (error) {
-        logger.error("Error pausing queue:", error);
-        res.status(500).json({ error: "Failed to pause queue" });
-    }
-};
-
-const resumeQueue = async (req: Request, res: Response) => {
-    try {
-        const result = await QueueMonitor.resumeQueue();
-        res.json(result);
-    } catch (error) {
-        logger.error("Error resuming queue:", error);
-        res.status(500).json({ error: "Failed to resume queue" });
-    }
-};
-
-export {slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage, getCacheStats, getQueueStats, getFailedJobs, retryFailedJob, getJobDetails, clearCompletedJobs, clearFailedJobs, pauseQueue, resumeQueue};

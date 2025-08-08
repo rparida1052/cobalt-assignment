@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { app } from "./app";
-import { messageQueue, messageWorker, gracefulShutdown } from "./services/messageQueue";
+import { gracefulShutdown } from "./services/messageQueue";
 import logger from "./utils/logger";
 
 dotenv.config({
@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   
-  // Initialize BullMQ queue system
-  logger.info('Initializing BullMQ queue system...');
+  // Initialize queue system
+  logger.info('Queue system ready');
   
   // Graceful shutdown handling
   process.on('SIGTERM', async () => {

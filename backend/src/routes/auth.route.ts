@@ -1,6 +1,16 @@
-import {Router} from "express";
-import { slackAuthInitialise, slackHandleCallback, getSlackChannels, joinSlackChannel, getJoinedChannels, sendSlackMessage, scheduleSlackMessage, getScheduledMessages, deleteScheduledMessage, getCacheStats, getQueueStats, getFailedJobs, retryFailedJob, getJobDetails, clearCompletedJobs, clearFailedJobs, pauseQueue, resumeQueue } from "../controllers/auth.controller";
-import prismaClient from "../utils/prisma";
+import { Router } from "express";
+import {
+  slackAuthInitialise,
+  slackHandleCallback,
+  getSlackChannels,
+  joinSlackChannel,
+  getJoinedChannels,
+  sendSlackMessage,
+  scheduleSlackMessage,
+  getScheduledMessages,
+  deleteScheduledMessage,
+  getCacheStats,
+} from "../controllers/auth.controller";
 
 const authRouter = Router();
 
@@ -14,15 +24,5 @@ authRouter.post("/slack/schedule-message", scheduleSlackMessage)
 authRouter.get("/slack/scheduled-messages", getScheduledMessages)
 authRouter.delete("/slack/scheduled-messages/:messageId", deleteScheduledMessage)
 authRouter.get("/slack/cache-stats", getCacheStats)
-
-// Queue monitoring routes
-authRouter.get("/slack/queue-stats", getQueueStats)
-authRouter.get("/slack/failed-jobs", getFailedJobs)
-authRouter.post("/slack/retry-job/:jobId", retryFailedJob)
-authRouter.get("/slack/job/:jobId", getJobDetails)
-authRouter.delete("/slack/clear-completed-jobs", clearCompletedJobs)
-authRouter.delete("/slack/clear-failed-jobs", clearFailedJobs)
-authRouter.post("/slack/pause-queue", pauseQueue)
-authRouter.post("/slack/resume-queue", resumeQueue)
 
 export default authRouter;

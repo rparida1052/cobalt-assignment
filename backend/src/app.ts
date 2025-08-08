@@ -17,6 +17,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the API!");
 });
 
-app.use("/auth/", authRouter);
+app.use("/auth", authRouter);
 
 export { app };
