@@ -6,7 +6,7 @@ A full-stack application that enables seamless Slack workspace integration with 
 
 
 <p align="center">
-  <a href="https://youtu.be/LuE3jXH4ZA8">
+  <a href="https://youtu.be/QiXb-1G8v_E">
     <img src="https://i9.ytimg.com/vi_webp/LuE3jXH4ZA8/mqdefault.webp?v=6895d23d&sqp=CKij18QG&rs=AOn4CLAXdubOsYlFQ4dSwIFjcRMbN7OKkg" alt="Assignemnet Demo" />
   </a>
 </p>
