@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import Dashboard from './pages/Dashboard.tsx'
+import { Toaster } from "@/components/ui/sonner"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>  
@@ -13,5 +14,6 @@ createRoot(document.getElementById('root')!).render(
           <Route path='/dashboard' element={<Dashboard />}/>
         </Routes>
       </BrowserRouter>
+      <Toaster />
   </StrictMode>,
 )

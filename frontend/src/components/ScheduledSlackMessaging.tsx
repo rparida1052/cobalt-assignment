@@ -4,8 +4,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Alert, AlertDescription } from './ui/alert';
+import { Card, CardContent } from './ui/card';
+import { toast } from 'sonner';
 
 interface Channel {
   id: string;
@@ -41,8 +41,6 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [isLoadingScheduled, setIsLoadingScheduled] = useState(false);
 
@@ -53,7 +51,6 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
 
   const fetchChannels = async () => {
     setIsLoading(true);
-    setError(null);
     
     try {
       const response = await fetch(`${API_ENDPOINTS.SLACK_CHANNELS}?workspaceId=${workspaceId}`, {
@@ -72,7 +69,7 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
         setSelectedChannel(data.channels[0].id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch channels');
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch channels');
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +77,6 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
 
   const fetchScheduledMessages = async () => {
     setIsLoadingScheduled(true);
-    setError(null);
     
     try {
       const response = await fetch(`${API_ENDPOINTS.SLACK_SCHEDULED_MESSAGES}?workspaceId=${workspaceId}`, {
@@ -96,7 +92,7 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
       
       setScheduledMessages(data.scheduledMessages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch scheduled messages');
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch scheduled messages');
     } finally {
       setIsLoadingScheduled(false);
     }
@@ -104,13 +100,13 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
 
   const scheduleMessage = async () => {
     if (!selectedChannel || !message.trim() || !scheduledDate || !scheduledTime) {
-      setError('Please select a channel, enter a message, and set a scheduled date and time');
+      toast.error('Please select a channel, enter a message, and set a scheduled date and time');
       return;
     }
 
     const selectedChannelData = channels.find(ch => ch.id === selectedChannel);
     if (!selectedChannelData) {
-      setError('Selected channel not found');
+      toast.error('Selected channel not found');
       return;
     }
 
@@ -118,13 +114,11 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
     const now = new Date();
     
     if (scheduledDateTime <= now) {
-      setError('Scheduled time must be in the future');
+      toast.error('Scheduled time must be in the future');
       return;
     }
 
     setIsScheduling(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch(API_ENDPOINTS.SLACK_SCHEDULE_MESSAGE, {
@@ -148,13 +142,13 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
         throw new Error(data.error || 'Failed to schedule message');
       }
       
-      setSuccess('Message scheduled successfully!');
+      toast.success('Message scheduled successfully!');
       setMessage('');
       setScheduledDate('');
       setScheduledTime('');
       fetchScheduledMessages(); // Refresh the list
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to schedule message');
+      toast.error(err instanceof Error ? err.message : 'Failed to schedule message');
     } finally {
       setIsScheduling(false);
     }
@@ -177,20 +171,14 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
         throw new Error(data.error || 'Failed to delete scheduled message');
       }
       
-      setSuccess('Scheduled message deleted successfully!');
+      toast.success('Scheduled message deleted successfully!');
       fetchScheduledMessages(); // Refresh the list
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete scheduled message');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete scheduled message');
     }
   };
 
-  const dismissError = () => {
-    setError(null);
-  };
 
-  const dismissSuccess = () => {
-    setSuccess(null);
-  };
 
   const getSelectedChannelName = () => {
     const channel = channels.find(ch => ch.id === selectedChannel);
@@ -351,43 +339,7 @@ const ScheduledSlackMessaging = ({ workspaceId, workspaceName }: ScheduledSlackM
             )}
           </Button>
 
-          {/* Error Message */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={dismissError}
-                  className="h-auto p-0 text-destructive hover:text-destructive"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
 
-          {/* Success Message */}
-          {success && (
-            <Alert>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{success}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={dismissSuccess}
-                  className="h-auto p-0"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* Scheduled Messages List */}
           <div className="mt-8">

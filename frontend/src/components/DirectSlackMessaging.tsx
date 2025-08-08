@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Alert, AlertDescription } from './ui/alert';
+import { Card, CardContent } from './ui/card';
+import { toast } from 'sonner';
 
 interface Channel {
   id: string;
@@ -26,8 +25,6 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
   const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChannels();
@@ -35,7 +32,6 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
 
   const fetchChannels = async () => {
     setIsLoading(true);
-    setError(null);
     
     try {
       const response = await fetch(`${API_ENDPOINTS.SLACK_CHANNELS}?workspaceId=${workspaceId}`, {
@@ -54,7 +50,7 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
         setSelectedChannel(data.channels[0].id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch channels');
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch channels');
     } finally {
       setIsLoading(false);
     }
@@ -62,13 +58,11 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
 
   const sendDirectMessage = async () => {
     if (!selectedChannel || !message.trim()) {
-      setError('Please select a channel and enter a message');
+      toast.error('Please select a channel and enter a message');
       return;
     }
 
     setIsSending(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const response = await fetch(API_ENDPOINTS.SLACK_SEND_MESSAGE, {
@@ -90,22 +84,16 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
         throw new Error(data.error || 'Failed to send message');
       }
       
-      setSuccess('Message sent successfully!');
+      toast.success('Message sent successfully!');
       setMessage('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      toast.error(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
       setIsSending(false);
     }
   };
 
-  const dismissError = () => {
-    setError(null);
-  };
 
-  const dismissSuccess = () => {
-    setSuccess(null);
-  };
 
   const getSelectedChannelName = () => {
     const channel = channels.find(ch => ch.id === selectedChannel);
@@ -207,43 +195,7 @@ const DirectSlackMessaging = ({ workspaceId, workspaceName }: DirectSlackMessagi
             )}
           </Button>
 
-          {/* Error Message */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={dismissError}
-                  className="h-auto p-0 text-destructive hover:text-destructive"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
 
-          {/* Success Message */}
-          {success && (
-            <Alert>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{success}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={dismissSuccess}
-                  className="h-auto p-0"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       )}
     </div>

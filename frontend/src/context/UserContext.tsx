@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Navigate } from "react-router";
 
 interface User {
     isAuthenticated: boolean;
